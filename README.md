@@ -1,10 +1,10 @@
 # 🕺 RickGotchi — The Ultimate AI Desktop Companion
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Release-v1.0.0-ff007f?style=for-the-badge&logo=github" alt="Version" />
-  <img src="https://img.shields.io/badge/Privacy-100%25_Local_Vision-39ff14?style=for-the-badge&logo=tensorflow&logoColor=white" alt="Privacy First" />
-  <img src="https://img.shields.io/badge/AI_Advisor-Gemini_Flash-1e66f5?style=for-the-badge&logo=googlegemini&logoColor=white" alt="AI Engine" />
-  <img src="https://img.shields.io/badge/Platform-Windows-89b4fa?style=for-the-badge&logo=windows" alt="OS" />
+  <a href="https://github.com/sabarinathb362/rickA10"><img src="https://img.shields.io/badge/Release-v1.0.0-ff007f?style=for-the-badge&logo=github" alt="Version" /></a>
+  <a href="https://github.com/vladmandic/face-api"><img src="https://img.shields.io/badge/Privacy-100%25_Local_Vision-39ff14?style=for-the-badge&logo=tensorflow&logoColor=white" alt="Privacy First" /></a>
+  <a href="https://ai.google.dev/gemini-api/docs"><img src="https://img.shields.io/badge/AI_Advisor-Gemini_Flash-1e66f5?style=for-the-badge&logo=googlegemini&logoColor=white" alt="AI Engine" /></a>
+  <a href="https://www.microsoft.com/windows"><img src="https://img.shields.io/badge/Platform-Windows-89b4fa?style=for-the-badge&logo=windows" alt="OS" /></a>
 </p>
 
 ---
