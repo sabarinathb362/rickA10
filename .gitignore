@@ -7,3 +7,5 @@ temp_capture.jpg
 *.pdf
 *.zip
 *.tar.gz
+.next/
+src/widgets/out/
