@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>RickGotchi</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { width:100%; height:100%; background:transparent !important; overflow:hidden; user-select:none; -webkit-app-region:no-drag; }
+
+#transparent-root { position:fixed; inset:0; pointer-events:none; }
+
+/* ── Rick container ─────────────────────────────────────────────────────── */
+#mate-container {
+  position:fixed; right:8px; bottom:0;
+  width:220px;
+  display:flex; flex-direction:column; align-items:center;
+  pointer-events:none;
+}
+
+/* ── Speech bubble ──────────────────────────────────────────────────────── */
+#bubble {
+  position:relative; max-width:210px;
+  background:rgba(8,3,22,0.96); border:1.5px solid rgba(255,100,200,0.8);
+  border-radius:14px; padding:9px 14px;
+  font-size:11px; color:#f0e8ff; line-height:1.5; text-align:center;
+  font-family:'Segoe UI',sans-serif;
+  box-shadow:0 4px 20px rgba(200,0,120,0.35),0 0 0 1px rgba(255,255,255,0.05);
+  margin-bottom:8px;
+  opacity:0; transform:translateY(6px) scale(0.95);
+  transition:opacity 0.3s,transform 0.3s;
+  pointer-events:auto; cursor:default;
+}
+#bubble.show { opacity:1; transform:translateY(0) scale(1); }
+#bubble::after { content:''; position:absolute; bottom:-9px; left:50%; transform:translateX(-50%); border:5px solid transparent; border-top-color:rgba(255,100,200,0.8); }
+#bubble::before { content:''; position:absolute; bottom:-7px; left:50%; transform:translateX(-50%); border:4px solid transparent; border-top-color:rgba(8,3,22,0.96); z-index:1; }
+
+/* ── Emotion badge ──────────────────────────────────────────────────────── */
+#emotion-badge {
+  display:flex; align-items:center; gap:4px;
+  background:rgba(8,3,22,0.88); border:1px solid rgba(255,255,255,0.12);
+  border-radius:20px; padding:3px 9px; margin-bottom:5px;
+  font-size:9px; color:#cdd6f4; font-family:'Segoe UI',sans-serif;
+  opacity:0; transition:opacity 0.4s; pointer-events:none;
+}
+#emotion-badge.show { opacity:1; }
+#emotion-badge .e-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.wellness-good    { background:#a6e3a1; box-shadow:0 0 4px #a6e3a1; }
+.wellness-warning { background:#f9e2af; box-shadow:0 0 4px #f9e2af; }
+.wellness-critical{ background:#f38ba8; box-shadow:0 0 6px #f38ba8; animation:pulse-dot 0.8s infinite; }
+@keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* ── Stats + action rows ────────────────────────────────────────────────── */
+#stats-row {
+  display:flex; gap:5px; justify-content:center; margin-bottom:5px;
+  opacity:0; transform:translateY(4px); transition:opacity 0.25s,transform 0.25s;
+  pointer-events:none;
+}
+#mate-container:hover #stats-row { opacity:1; transform:translateY(0); }
+.stat-pill {
+  background:rgba(8,3,22,0.93); border:1px solid rgba(255,255,255,0.15);
+  border-radius:20px; padding:2px 8px; font-size:8px; color:#cdd6f4;
+  display:flex; align-items:center; gap:3px; font-family:'Segoe UI',sans-serif;
+}
+.stat-dot { width:5px; height:5px; border-radius:50%; }
+
+#action-row {
+  display:flex; gap:6px; justify-content:center; margin-bottom:5px;
+  opacity:0; transform:translateY(4px); transition:opacity 0.25s,transform 0.25s;
+  pointer-events:none;
+}
+#mate-container:hover #action-row { opacity:1; transform:translateY(0); pointer-events:auto; }
+.act-btn {
+  width:30px; height:30px; border-radius:50%;
+  border:1.5px solid rgba(255,255,255,0.18); background:rgba(8,3,22,0.92);
+  color:white; font-size:14px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition:transform 0.15s,box-shadow 0.2s,background 0.2s;
+  box-shadow:0 3px 10px rgba(0,0,0,0.6);
+}
+.act-btn:hover { transform:scale(1.3) translateY(-3px); background:rgba(200,0,120,0.6); box-shadow:0 6px 18px rgba(200,0,120,0.5); }
+.act-btn:active { transform:scale(0.88); }
+#btn-ask { border-color:#89b4fa; }
+#btn-ask:hover { background:rgba(30,100,255,0.6); box-shadow:0 6px 18px rgba(30,100,255,0.5); }
+
+/* ── Shelf + shadow ─────────────────────────────────────────────────────── */
+#shelf {
+  width:160px; height:2px;
+  background:linear-gradient(90deg,transparent 0%,rgba(255,120,200,0.6) 20%,rgba(255,240,255,0.95) 50%,rgba(255,120,200,0.6) 80%,transparent 100%);
+  border-radius:2px; box-shadow:0 0 12px rgba(255,100,180,0.8),0 0 30px rgba(255,100,180,0.3);
+}
+
+/* ── Rick sprite ────────────────────────────────────────────────────────── */
+#rick-wrap {
+  cursor:grab; position:relative;
+  pointer-events:auto; transform-origin:bottom center;
+}
+#rick-wrap:active { cursor:grabbing; }
+#rick-img {
+  width:200px; height:200px; object-fit:contain; display:block;
+  image-rendering:pixelated;
+  filter:drop-shadow(0 -4px 16px rgba(255,50,200,0.35)) drop-shadow(0 8px 18px rgba(0,0,0,0.6));
+  transition:filter 0.4s;
+  user-select:none; -webkit-user-drag:none;
+}
+#timer-badge {
+  position:absolute; top:4px; right:-14px;
+  background:rgba(8,3,22,0.93); border:1px solid rgba(255,255,255,0.18);
+  border-radius:20px; padding:2px 7px; font-size:8px; color:#cdd6f4;
+  pointer-events:none; opacity:0; transition:opacity 0.3s; white-space:nowrap; font-family:monospace;
+}
+#mate-container:hover #timer-badge { opacity:1; }
+#timer-badge.urgent { color:#f38ba8; border-color:#f38ba8; }
+
+/* ── Camera indicator ───────────────────────────────────────────────────── */
+#cam-indicator {
+  position:absolute; top:6px; left:-16px;
+  width:10px; height:10px; border-radius:50%;
+  background:#313244; border:1px solid rgba(255,255,255,0.2);
+  transition:background 0.5s; pointer-events:none;
+}
+#cam-indicator.active { background:#a6e3a1; box-shadow:0 0 6px #a6e3a1; }
+#cam-indicator.error  { background:#f38ba8; }
+
+/* ── Mood glow filters ──────────────────────────────────────────────────── */
+body.mood-dancing    #rick-img { filter:drop-shadow(0 -6px 24px rgba(255,30,220,0.7))   drop-shadow(0 8px 18px rgba(0,0,0,0.6)); }
+body.mood-angry      #rick-img { filter:drop-shadow(0 -6px 28px rgba(255,20,20,0.99))   drop-shadow(0 8px 18px rgba(0,0,0,0.6)); }
+body.mood-tired      #rick-img { filter:brightness(0.7) saturate(0.4) drop-shadow(0 6px 10px rgba(40,40,120,0.5)); }
+body.mood-quarantine #rick-img { filter:drop-shadow(0 0 30px rgba(255,0,80,0.99)) brightness(1.1); }
+body.mood-deserted   #rick-img { filter:grayscale(100%) opacity(0.35) brightness(0.5); }
+body.mood-panic      #rick-img { filter:drop-shadow(0 -4px 20px rgba(255,80,0,0.8))     drop-shadow(0 8px 18px rgba(0,0,0,0.6)); }
+
+/* ── Animations ─────────────────────────────────────────────────────────── */
+@keyframes breathe   { 0%,100%{transform:scaleY(1) translateY(0)}           50%{transform:scaleY(1.012) translateY(-4px)} }
+@keyframes dance-bob { 0%,100%{transform:translateY(0) rotate(-1.5deg)}     50%{transform:translateY(-14px) rotate(1.5deg)} }
+@keyframes shake     { 0%,100%{transform:translate(0,0) rotate(0)}          20%{transform:translate(-6px,1px) rotate(-4deg)}   70%{transform:translate(6px,-1px) rotate(4deg)} }
+@keyframes sway      { 0%,100%{transform:rotate(-6deg) translateY(2px)}     50%{transform:rotate(4deg) translateY(-4px)} }
+@keyframes pulse-q   { 0%,100%{transform:scale(1)}                          50%{transform:scale(1.06)} }
+
+/* Typing: rapid micro-jitter + lean forward — visually intense */
+@keyframes type-intense {
+  0%   { transform: translateX(0)    translateY(0)    rotate(0deg); }
+  8%   { transform: translateX(-2px) translateY(-3px) rotate(-0.6deg); }
+  16%  { transform: translateX(2px)  translateY(-5px) rotate(0.5deg); }
+  25%  { transform: translateX(-3px) translateY(-2px) rotate(-0.4deg); }
+  33%  { transform: translateX(1px)  translateY(-6px) rotate(0.6deg); }
+  42%  { transform: translateX(-1px) translateY(-4px) rotate(-0.5deg); }
+  50%  { transform: translateX(3px)  translateY(-5px) rotate(0.4deg); }
+  58%  { transform: translateX(-2px) translateY(-3px) rotate(-0.6deg); }
+  67%  { transform: translateX(2px)  translateY(-6px) rotate(0.5deg); }
+  75%  { transform: translateX(-1px) translateY(-2px) rotate(-0.3deg); }
+  83%  { transform: translateX(1px)  translateY(-4px) rotate(0.4deg); }
+  92%  { transform: translateX(-2px) translateY(-5px) rotate(-0.5deg); }
+  100% { transform: translateX(0)    translateY(0)    rotate(0deg); }
+}
+/* Typing glow */
+.anim-type #rick-img {
+  filter: drop-shadow(0 -4px 16px rgba(100,180,255,0.6))
+          drop-shadow(0 0 30px rgba(80,160,255,0.3))
+          drop-shadow(0 8px 18px rgba(0,0,0,0.6));
+}
+
+.anim-breathe { animation: breathe 3.5s ease-in-out infinite; }
+.anim-dance   { animation: dance-bob 0.85s ease-in-out infinite; }
+.anim-type    { animation: type-intense 0.45s linear infinite; }
+.anim-shake   { animation: shake 0.25s linear infinite; }
+.anim-sway    { animation: sway 2s ease-in-out infinite; }
+.anim-pulse   { animation: pulse-q 0.5s ease-in-out infinite; }
+
+/* ── Code particles ─────────────────────────────────────────────────────── */
+@keyframes particle-float {
+  0%   { transform:translateY(0) scale(1) rotate(0deg);   opacity:0.95; }
+  60%  { opacity:0.7; }
+  100% { transform:translateY(-90px) scale(0.4) rotate(20deg); opacity:0; }
+}
+@keyframes error-particle {
+  0%   { transform:translateY(0) scale(1.2);   opacity:1; }
+  100% { transform:translateY(-70px) scale(0.5); opacity:0; }
+}
+.code-particle {
+  position:fixed; font-family:'Courier New',monospace; font-weight:bold;
+  pointer-events:none; z-index:9998;
+  animation:particle-float 1.6s ease-out forwards;
+}
+.error-particle {
+  position:fixed; font-family:'Segoe UI',sans-serif; font-weight:bold;
+  pointer-events:none; z-index:9998;
+  animation:error-particle 1.2s ease-out forwards;
+}
+
+/* ── Quarantine overlay ─────────────────────────────────────────────────── */
+#quarantine-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(4,0,12,0.97); border:3px solid #ff0055;
+  flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; padding:20px; z-index:9999;
+  font-family:'Courier New',monospace; pointer-events:auto;
+}
+#quarantine-overlay.show { display:flex; }
+.q-header { width:100%; padding:10px; font-weight:bold; font-size:11px; letter-spacing:2px; color:#ff0055; animation:qFlash 0.35s infinite alternate; margin-bottom:14px; }
+@keyframes qFlash { from{background:rgba(180,0,30,0.9)} to{background:rgba(40,0,8,0.9)} }
+#q-img { width:140px; height:140px; object-fit:contain; image-rendering:pixelated; animation:pulse-q 0.5s ease-in-out infinite; margin-bottom:12px; }
+.q-lyric { font-size:12px; color:#fff; margin:6px 0; }
+.q-lyric span { color:#ff0055; font-weight:bold; }
+#captcha-row { display:flex; gap:8px; margin-top:10px; justify-content:center; }
+#captcha-input { padding:7px 10px; border-radius:8px; border:2px solid #89b4fa; background:#08031a; color:#fff; width:90px; text-align:center; outline:none; font-size:12px; }
+#captcha-submit { padding:7px 12px; background:#ff0055; color:#fff; border:none; border-radius:8px; cursor:pointer; font-weight:bold; font-size:11px; box-shadow:0 0 14px #ff005588; }
+#captcha-submit:hover { background:#ff3377; }
+
+/* ── Panic tip banner ───────────────────────────────────────────────────── */
+#panic-tip {
+  position:fixed; bottom:70px; left:50%; transform:translateX(-50%);
+  background:rgba(30,10,0,0.96); border:1.5px solid rgba(255,100,0,0.8);
+  border-radius:10px; padding:8px 16px; max-width:340px;
+  font-size:10px; color:#fab387; font-family:'Segoe UI',sans-serif;
+  text-align:center; line-height:1.5;
+  opacity:0; transition:opacity 0.4s; pointer-events:none; z-index:9000;
+}
+#panic-tip.show { opacity:1; }
+#panic-tip strong { color:#f9e2af; display:block; margin-bottom:3px; font-size:11px; }
+</style>
+</head>
+<body class="mood-idle">
+<div id="transparent-root"></div>
+
+<!-- Hidden camera elements -->
+<video id="cam-video"   style="display:none" playsinline muted></video>
+<canvas id="cam-canvas" style="display:none" width="320" height="240"></canvas>
+
+<!-- Quarantine overlay -->
+<div id="quarantine-overlay">
+  <div class="q-header">⚠ RICKGUARD QUARANTINE SYSTEM ACTIVE ⚠</div>
+  <img id="q-img" src="rick/quarantine.png" alt="Rick">
+  <h2 style="color:#39ff14;font-size:14px;margin-bottom:6px;">NEVER GONNA LET YOU VIEW THIS!</h2>
+  <p style="color:#a6adc8;font-size:10px;max-width:240px;line-height:1.6;">Complete the lyric to prove your loyalty:</p>
+  <div class="q-lyric">Never gonna <span>_____</span> you up</div>
+  <div id="captcha-row">
+    <input id="captcha-input" type="text" placeholder="one word...">
+    <button id="captcha-submit">UNLOCK</button>
+  </div>
+</div>
+
+<!-- Panic tip banner (shows after 3 min stuck) -->
+<div id="panic-tip">
+  <strong>💡 Rick's Debugging Tip</strong>
+  <span id="panic-tip-text">Loading advice...</span>
+</div>
+
+<!-- Rick's desktop mate -->
+<div id="mate-container">
+  <div id="bubble">Never gonna give you up!</div>
+
+  <div id="emotion-badge">
+    <div class="e-dot wellness-good" id="e-dot"></div>
+    <span id="e-label">😐 neutral</span>
+  </div>
+
+  <div id="stats-row">
+    <div class="stat-pill"><div class="stat-dot" style="background:#a6e3a1"></div><span id="s-groove">80</span></div>
+    <div class="stat-pill"><div class="stat-dot" style="background:#89b4fa"></div><span id="s-vocal">70</span></div>
+    <div class="stat-pill"><div class="stat-dot" style="background:#f38ba8"></div><span id="s-loyalty">90</span></div>
+  </div>
+
+  <div id="action-row">
+    <button class="act-btn" id="btn-tea"   title="Ginger Tea (+vocal)">🍵</button>
+    <button class="act-btn" id="btn-vinyl" title="Vinyl Record (dance 30s)">🎵</button>
+    <button class="act-btn" id="btn-dance" title="Dance!" style="border-color:#39ff14">🕺</button>
+    <button class="act-btn" id="btn-ask"   title="Ask Rick for advice (AI)">🤖</button>
+  </div>
+
+  <div id="shelf"></div>
+
+  <div id="rick-wrap">
+    <img id="rick-img" src="rick/idle.png" alt="Rick" draggable="false">
+    <div id="timer-badge">10:00</div>
+    <div id="cam-indicator" title="Camera emotion detection"></div>
+  </div>
+</div>
+
+<!-- face-api.js from local node_modules -->
+<script src="node_modules/@vladmandic/face-api/dist/face-api.js"></script>
+
+<script>
+// ── Sprites ────────────────────────────────────────────────────────────────────
+var SP = {
+  DANCING:    ['rick/dancing1.png','rick/dancing2.png','rick/dancing3.png'],
+  IDLE:       'rick/idle.png',
+  TIRED:      'rick/tired.png',
+  ANGRY:      'rick/angry.png',
+  QUARANTINE: 'rick/quarantine.png',
+  DESERTED:   'rick/deserted.png',
+  STUDIOUS:   'rick/studious.png'
+};
+
+// Preload
+Object.values(SP).flat().forEach(s => { var i=new Image(); i.src=s; });
+
+// ── DOM ────────────────────────────────────────────────────────────────────────
+var ri  = document.getElementById('rick-img');
+var rw  = document.getElementById('rick-wrap');
+var mc  = document.getElementById('mate-container');
+var bb  = document.getElementById('bubble');
+var tb  = document.getElementById('timer-badge');
+var qo  = document.getElementById('quarantine-overlay');
+var eb  = document.getElementById('emotion-badge');
+var el  = document.getElementById('e-label');
+var ed  = document.getElementById('e-dot');
+var ci  = document.getElementById('cam-indicator');
+var pt  = document.getElementById('panic-tip');
+var ptx = document.getElementById('panic-tip-text');
+
+// ── State ──────────────────────────────────────────────────────────────────────
+var state = null, tl = 600, bubHide = null;
+var di = 0, dc = null, lastAnimKey = '';
+var dragging = false, dragOffX = 0, dragOffY = 0;
+var screenW = window.screen.width, screenH = window.screen.height;
+var particleTimer = null, panicParticleTimer = null;
+
+// ── Code particles ─────────────────────────────────────────────────────────────
+var CODE_SYMBOLS  = ['{}','()','<>','=>',';','++','--','//','.map','null','[]','&&','||','??','let','fn'];
+var ERROR_SYMBOLS = ['ERR!','null','❌','!','undefined','fatal','0x','NaN','fix me','???'];
+
+function spawnParticle(symbols, colorFn, anim) {
+  var p = document.createElement('span');
+  p.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+  p.className = anim || 'code-particle';
+  var rect = mc.getBoundingClientRect();
+  var cx   = rect.left + rect.width/2 + (Math.random()-0.5)*80;
+  var cy   = rect.top + 60;
+  var color = colorFn ? colorFn() : (Math.random()>0.5 ? '#89b4fa' : '#a6e3a1');
+  p.style.cssText = [
+    'left:' + cx + 'px', 'top:' + cy + 'px',
+    'color:' + color,
+    'font-size:' + (8+Math.floor(Math.random()*6)) + 'px',
+    'z-index:9998', 'pointer-events:none'
+  ].join(';');
+  document.body.appendChild(p);
+  setTimeout(() => p.remove(), 1800);
+}
+
+function startCodeParticles() {
+  if (particleTimer) return;
+  spawnParticle(CODE_SYMBOLS, null);
+  particleTimer = setInterval(() => spawnParticle(CODE_SYMBOLS, null), 550);
+}
+function stopCodeParticles() { clearInterval(particleTimer); particleTimer = null; }
+
+function burstErrorParticles() {
+  for (var i=0; i<4; i++) {
+    setTimeout(() => spawnParticle(ERROR_SYMBOLS,
+      () => Math.random()>0.5 ? '#f38ba8' : '#fab387', 'error-particle'), i*120);
+  }
+}
+
+// ── Animation ─────────────────────────────────────────────────────────────────
+function startDance() {
+  if (dc) return;
+  di = 0; ri.src = SP.DANCING[0];
+  dc = setInterval(() => { di=(di+1)%3; ri.src=SP.DANCING[di]; }, 430);
+}
+function stopDance() { if(dc){clearInterval(dc);dc=null;} }
+
+function setWrapAnim(cls) {
+  rw.classList.remove('anim-breathe','anim-dance','anim-type','anim-shake','anim-sway','anim-pulse');
+  if (cls) rw.classList.add(cls);
+}
+
+function staticSprite(s) {
+  if (s.mood==='DESERTED')         return SP.DESERTED;
+  if (s.mood==='QUARANTINE')       return SP.QUARANTINE;
+  if (s.mood==='ANGRY')            return SP.ANGRY;
+  if (s.mood==='TIRED')            return SP.TIRED;
+  if (s.screenState==='STUDIOUS')  return SP.STUDIOUS;
+  return SP.IDLE;
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function render(s) {
+  state = s; tl = s.secondsUntilFeed;
+
+  if (s.mood === 'QUARANTINE') {
+    qo.classList.add('show');
+    stopDance(); stopCodeParticles();
+    ri.src = SP.QUARANTINE; setWrapAnim('anim-pulse');
+    document.body.className = 'mood-quarantine';
+    updateStats(s); showBubble(s.statusText); return;
+  }
+  qo.classList.remove('show');
+
+  var music  = s.isMusicPlaying;
+  var typing = s.isTyping && !music && !['ANGRY','TIRED','DESERTED','QUARANTINE'].includes(s.mood);
+  var isPanic = s.screenState === 'PANIC';
+  var animKey = music ? 'dance' : typing ? 'type' : s.mood;
+
+  if (animKey !== lastAnimKey) {
+    lastAnimKey = animKey;
+    if (music) {
+      stopCodeParticles(); startDance(); setWrapAnim('anim-dance');
+    } else if (typing) {
+      stopDance(); ri.src = SP.IDLE;
+      setWrapAnim('anim-type'); startCodeParticles();
+    } else {
+      stopDance(); stopCodeParticles();
+      ri.src = staticSprite(s);
+      if      (s.mood==='ANGRY')  setWrapAnim('anim-shake');
+      else if (s.mood==='TIRED')  setWrapAnim('anim-sway');
+      else                        setWrapAnim('anim-breathe');
+    }
+  }
+
+  // PANIC: error particles burst + orange glow
+  if (isPanic) {
+    document.body.className = 'mood-panic';
+    if (!panicParticleTimer) {
+      burstErrorParticles();
+      panicParticleTimer = setInterval(burstErrorParticles, 4000);
+    }
+  } else {
+    clearInterval(panicParticleTimer); panicParticleTimer = null;
+    document.body.className = 'mood-' + (s.mood||'idle').toLowerCase();
+  }
+
+  // Panic tip panel
+  if (s.stuckMinutes >= 3 && isPanic) {
+    pt.classList.add('show');
+    ptx.textContent = s.statusText;
+  } else {
+    pt.classList.remove('show');
+  }
+
+  updateStats(s);
+  showBubble(s.statusText);
+}
+
+function updateStats(s) {
+  document.getElementById('s-groove').textContent  = Math.round(s.groove);
+  document.getElementById('s-vocal').textContent   = Math.round(s.vocal);
+  document.getElementById('s-loyalty').textContent = Math.round(s.loyalty);
+}
+
+function showBubble(text, permanent) {
+  bb.textContent = text;
+  bb.classList.add('show');
+  clearTimeout(bubHide);
+  if (!permanent) bubHide = setTimeout(() => bb.classList.remove('show'), 6000);
+}
+
+// ── Emotion badge update ───────────────────────────────────────────────────────
+var EMOTION_EMOJI = { happy:'😊', sad:'😢', tired:'😴', stressed:'😰', focused:'🧠', neutral:'😐', frustrated:'😤', surprised:'😲' };
+
+function updateEmotionBadge(emotion, wellness) {
+  if (!emotion || emotion === 'neutral') { eb.classList.remove('show'); return; }
+  var emoji = EMOTION_EMOJI[emotion] || '😐';
+  el.textContent = emoji + ' ' + emotion;
+  ed.className   = 'e-dot wellness-' + (wellness || 'good');
+  eb.classList.add('show');
+}
+
+// ── Timer countdown ────────────────────────────────────────────────────────────
+function fmt(s) { var m=Math.floor(s/60),sec=Math.floor(s%60); return m+':'+(sec<10?'0':'')+sec; }
+setInterval(() => {
+  if (!state || ['DESERTED','QUARANTINE'].includes(state.mood)) return;
+  tl = Math.max(0, tl-1); tb.textContent = fmt(tl);
+  tb.classList.toggle('urgent', tl < 60);
+}, 1000);
+
+// ── Drag (stays where dropped) ─────────────────────────────────────────────────
+var dragOffX=0, dragOffY=0;
+
+rw.addEventListener('mousedown', e => {
+  if (e.button!==0) return; dragging=true;
+  var rect=mc.getBoundingClientRect();
+  mc.style.right='auto'; mc.style.bottom='auto';
+  mc.style.left=rect.left+'px'; mc.style.top=rect.top+'px';
+  dragOffX=e.clientX-rect.left; dragOffY=e.clientY-rect.top;
+  mc.style.transition='none'; document.body.style.cursor='grabbing';
+  showBubble("Never gonna let you drop me! 🎵", true);
+  e.preventDefault();
+});
+document.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  var nl=e.clientX-dragOffX, nt=e.clientY-dragOffY;
+  nl=Math.max(0,Math.min(nl,screenW-220));
+  nt=Math.max(0,Math.min(nt,screenH-260));
+  mc.style.left=nl+'px'; mc.style.top=nt+'px';
+});
+document.addEventListener('mouseup', () => {
+  if (!dragging) return; dragging=false;
+  document.body.style.cursor=''; mc.style.transition='left 0.1s,top 0.1s';
+  showBubble("Set! Never gonna run around and leave you here! 🎤");
+  window.rickAPI.dragReward();
+});
+
+rw.addEventListener('dblclick', doDance);
+rw.addEventListener('contextmenu', e => { e.preventDefault(); showBubble("*points finger* Never gonna give you up!"); });
+
+// ── Buttons ────────────────────────────────────────────────────────────────────
+document.getElementById('btn-tea').onclick   = () => window.rickAPI.feed('Ginger Tea').then(render);
+document.getElementById('btn-vinyl').onclick = () => window.rickAPI.feed('Vinyl Record').then(render);
+document.getElementById('btn-dance').onclick = doDance;
+document.getElementById('btn-ask').onclick   = askRick;
+document.getElementById('captcha-submit').onclick = doCap;
+document.getElementById('captcha-input').addEventListener('keydown', e => { if(e.key==='Enter') doCap(); });
+
+function doDance() {
+  window.rickAPI.dance().then(r => { render(r.state); if(!r.ok) showBubble('Too tired to dance! Give me some tea first! 🍵'); });
+}
+function doCap() {
+  var w=document.getElementById('captcha-input').value;
+  window.rickAPI.solveCaptcha(w).then(r => { if(r.ok){render(r.state);}else showBubble('Wrong! Hint: Never gonna _____ you up'); });
+}
+function askRick() {
+  showBubble("Thinking of some advice... 🤔", true);
+  window.rickAPI.getAdvice('manual').then(() => {});
+}
+
+// ── Screen size ────────────────────────────────────────────────────────────────
+window.rickAPI.onScreenSize(s => { screenW=s.w; screenH=s.h; });
+window.rickAPI.onStateUpdate(render);
+
+// ── face-api.js: local camera emotion detection ────────────────────────────────
+var faceApiReady = false;
+var camVideo  = document.getElementById('cam-video');
+var camCanvas = document.getElementById('cam-canvas');
+
+async function initFaceApi() {
+  try {
+    const MODEL_URL = './models';
+    // Load only the 2 tiny models: face detector + expression recognition
+    await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+    await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
+    faceApiReady = true;
+    console.log('[RickGotchi] face-api models loaded');
+    initCamera();
+  } catch(e) {
+    console.warn('[RickGotchi] face-api load failed:', e.message);
+    ci.className = 'error';
+  }
+}
+
+async function initCamera() {
+  // Try camera constraints from least demanding to most
+  const PROFILES = [
+    { video: { width:160,  height:120, frameRate:{ ideal:5,  max:10 }, facingMode:'user' }, label:'160×120' },
+    { video: { width:320,  height:240, frameRate:{ ideal:5,  max:15 }, facingMode:'user' }, label:'320×240' },
+    { video: { width:640,  height:480, frameRate:{ ideal:10, max:30 }, facingMode:'user' }, label:'640×480' },
+    { video: true, label:'default' }  // last resort — let browser decide everything
+  ];
+
+  for (const profile of PROFILES) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia(profile);
+      camVideo.srcObject = stream;
+      await camVideo.play();
+      ci.classList.add('active'); ci.classList.remove('error');
+      ci.title = 'Camera active: ' + profile.label;
+      console.log('[RickGotchi] Camera active at', profile.label);
+      setTimeout(analyzeEmotion, 5000);
+      setInterval(analyzeEmotion, 30000);
+      return; // success — stop trying profiles
+    } catch(e) {
+      const isHwBusy = e.name === 'NotReadableError'  // camera in use by another app
+                    || e.name === 'OverconstrainedError';
+      console.warn('[RickGotchi] Camera profile', profile.label, 'failed:', e.name, e.message);
+      if (!isHwBusy) continue; // constraint issue — try next profile
+      // Hardware busy — wait 30s then retry entire init
+      ci.classList.add('error');
+      ci.title = 'Camera busy — will retry in 30s';
+      console.warn('[RickGotchi] Camera hardware busy (possibly held by Teams/Zoom). Retrying in 30s...');
+      setTimeout(initCamera, 30000);
+      return;
+    }
+  }
+  // All profiles failed
+  ci.classList.add('error');
+  ci.title = 'Camera unavailable';
+  console.warn('[RickGotchi] Camera unavailable on all profiles');
+}
+
+async function analyzeEmotion() {
+  if (!faceApiReady || camVideo.paused || camVideo.videoWidth === 0) return;
+  try {
+    var ctx = camCanvas.getContext('2d');
+    camCanvas.width  = camVideo.videoWidth  || 320;
+    camCanvas.height = camVideo.videoHeight || 240;
+    ctx.drawImage(camVideo, 0, 0, camCanvas.width, camCanvas.height);
+
+    const detection = await faceapi
+      .detectSingleFace(camCanvas, new faceapi.TinyFaceDetectorOptions({ inputSize:224, scoreThreshold:0.4 }))
+      .withFaceExpressions();
+
+    if (!detection) {
+      updateEmotionBadge(null, null);
+      window.rickAPI.updateEmotion({ face_detected:false, emotion:'neutral', wellness:'good' });
+      return;
+    }
+
+    const expr = detection.expressions;
+    // Get dominant expression
+    var dominant = Object.entries(expr).reduce((a,b) => b[1]>a[1] ? b : a);
+    var emotion   = dominant[0];      // e.g. "happy", "sad", "fearful", "disgusted", "surprised", "neutral", "angry"
+    var confidence = dominant[1];
+
+    // Map to wellness
+    var wellness = 'good';
+    if (['sad','disgusted','fearful'].includes(emotion) && confidence > 0.5)           wellness = 'critical';
+    else if (['angry','fearful','sad'].includes(emotion) || confidence < 0.4)         wellness = 'warning';
+    // Treat "fearful" → "stressed", "disgusted" → "frustrated" for display
+    var displayEmotion = { fearful:'stressed', disgusted:'frustrated', angry:'frustrated' }[emotion] || emotion;
+
+    updateEmotionBadge(displayEmotion, wellness);
+
+    // Send to main process to update state + trigger advice if needed
+    window.rickAPI.updateEmotion({
+      face_detected: true,
+      emotion:       displayEmotion,
+      wellness:      wellness,
+      confidence:    confidence,
+      raw_expressions: expr
+    });
+
+    // Immediate bubble for critical state
+    if (wellness === 'critical' && confidence > 0.6) {
+      var msgs = {
+        sad:       "You look sad — never gonna give up on you! Want to talk? 💙",
+        fearful:   "Looking stressed! Breathe — we know the game, we'll play it! 💪",
+        disgusted: "Frustrated? Let's step back and rubber duck debug! 🦆",
+      };
+      var msg = msgs[emotion] || "You doing ok? Rick's here! Never gonna let you down 💙";
+      showBubble(msg);
+    }
+
+  } catch(e) {
+    console.warn('[RickGotchi] Emotion analysis error:', e.message);
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+window.rickAPI.getState().then(s => {
+  render(s);
+  setTimeout(() => showBubble("Never gonna give you up! I'm watching your productivity... 👀"), 800);
+});
+
+// Start face-api after page loads
+if (typeof faceapi !== 'undefined') {
+  initFaceApi();
+} else {
+  console.warn('[RickGotchi] face-api.js not loaded');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "name": "rickgotchi-desktop",
+  "version": "1.0.0",
+  "description": "RickGotchi - Desktop AI Virtual Pet Overlay",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {
+    "@vladmandic/face-api": "^1.7.15"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0"
+  }
+}

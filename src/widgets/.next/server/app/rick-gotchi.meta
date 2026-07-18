@@ -1,0 +1,15 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/rick-gotchi/layout,_N_T_/rick-gotchi/page,_N_T_/rick-gotchi"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/rick-gotchi/__PAGE__",
+    "/rick-gotchi",
+    "/_index",
+    "/_head"
+  ]
+}

@@ -1,0 +1,25 @@
+[
+  {
+    "route": "/rick-gotchi",
+    "firstLoadUncompressedJsBytes": 523940,
+    "firstLoadChunkPaths": [
+      ".next\\static\\chunks\\2-h40qdt1xovk.js",
+      ".next\\static\\chunks\\19bwvr7gwqdh7.js",
+      ".next\\static\\chunks\\0vmqa3wo8ec9o.js",
+      ".next\\static\\chunks\\2-eqb1vyiksg9.js",
+      ".next\\static\\chunks\\0-dot0vulp5xb.js",
+      ".next\\static\\chunks\\turbopack-09gexlm-dhxix.js"
+    ]
+  },
+  {
+    "route": "/_not-found",
+    "firstLoadUncompressedJsBytes": 513845,
+    "firstLoadChunkPaths": [
+      ".next\\static\\chunks\\2-h40qdt1xovk.js",
+      ".next\\static\\chunks\\0vmqa3wo8ec9o.js",
+      ".next\\static\\chunks\\2-eqb1vyiksg9.js",
+      ".next\\static\\chunks\\0-dot0vulp5xb.js",
+      ".next\\static\\chunks\\turbopack-09gexlm-dhxix.js"
+    ]
+  }
+]

@@ -1,0 +1,9 @@
+.nitrostudio/
+node_modules/
+.env
+*.log
+dist/
+temp_capture.jpg
+*.pdf
+*.zip
+*.tar.gz
