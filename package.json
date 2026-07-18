@@ -4,7 +4,7 @@
   "description": "Rick Astley AI Pet MCP Server",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && npm run widget:build",
     "start": "node dist/index.js",
     "dev": "npx @nitrostack/cli dev",
     "widget:dev": "npm run dev --prefix src/widgets",
