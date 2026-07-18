@@ -1,10 +1,10 @@
 # 🕺 RickGotchi — The Ultimate AI Desktop Companion
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Release-v1.0.0-ff007f?style=for-the-badge" alt="Version" />
-  <img src="https://img.shields.io/badge/Privacy-100%25_Local_Vision-39ff14?style=for-the-badge" alt="Privacy First" />
-  <img src="https://img.shields.io/badge/AI_Advisor-Gemini_Flash-1e66f5?style=for-the-badge" alt="AI Engine" />
-  <img src="https://img.shields.io/badge/Platform-Windows-89b4fa?style=for-the-badge" alt="OS" />
+  <img src="https://img.shields.io/badge/Release-v1.0.0-ff007f?style=for-the-badge&logo=github" alt="Version" />
+  <img src="https://img.shields.io/badge/Privacy-100%25_Local_Vision-39ff14?style=for-the-badge&logo=tensorflow&logoColor=white" alt="Privacy First" />
+  <img src="https://img.shields.io/badge/AI_Advisor-Gemini_Flash-1e66f5?style=for-the-badge&logo=googlegemini&logoColor=white" alt="AI Engine" />
+  <img src="https://img.shields.io/badge/Platform-Windows-89b4fa?style=for-the-badge&logo=windows" alt="OS" />
 </p>
 
 ---
