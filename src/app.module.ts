@@ -11,5 +11,15 @@ import { RickGotchiModule } from './modules/meme/rickgotchi.module.js';
 @Module({
   name: 'app',
   imports: [RickGotchiModule],
+  providers: [
+    {
+      provide: 'OAUTH_CONFIG',
+      useValue: {
+        required: false,
+        resourceUri: 'http://localhost:3000',
+        authorizationServers: ['http://localhost:3000']
+      }
+    }
+  ]
 })
 export class AppModule {}
